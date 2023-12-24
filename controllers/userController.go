@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/woonmapao/user-service-go/initializer"
@@ -61,7 +62,6 @@ func AddUser(c *gin.Context) {
 		return
 	}
 
-	// Return status
 	// Return success response
 	c.JSON(http.StatusOK,
 		responses.CreateSuccessResponse(&user),
@@ -69,27 +69,43 @@ func AddUser(c *gin.Context) {
 
 }
 
+// Retrieve a specific user based on their ID
 func GetUserByID(c *gin.Context) {
-	// Retrieve a specific user based on their ID
 
 	// Get ID from URL param
-	id := c.Param("id")
+	userID := c.Param("id")
 
+	// Convert user ID to integer
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,
+			responses.CreateErrorResponse([]string{
+				"Invalid user ID",
+			}))
+		return
+	}
 	// Get the user from the database
 	var user models.User
-	err := initializer.DB.First(&user, id).Error
+	err = initializer.DB.First(&user, id).Error
 	if err != nil {
-		// Handle user not found or other errors
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "User not found",
-		})
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to fetch user",
+			}))
+		return
+	}
+	// Check if the user was not found
+	if &user == nil {
+		c.JSON(http.StatusNotFound,
+			responses.CreateErrorResponse([]string{
+				"User not found",
+			}))
 		return
 	}
 
-	// Respond with the found user
-	c.JSON(http.StatusOK, gin.H{
-		"user": user,
-	})
+	// Return success response
+	c.JSON(http.StatusOK,
+		responses.CreateSuccessResponse(&user))
 
 }
 
