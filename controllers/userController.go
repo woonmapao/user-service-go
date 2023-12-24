@@ -231,19 +231,47 @@ func GetUserOrders(c *gin.Context) {
 // DeleteUser deletes a user based on their ID
 func DeleteUser(c *gin.Context) {
 	// Get the ID off the URL
-	id := c.Param("id")
+	userID := c.Param("id")
 
-	// Delete the user
-	err := initializer.DB.Delete(&models.User{}, id).Error
+	// Convert user ID to integer (validations)
+	id, err := strconv.Atoi(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to delete user",
-		})
+		c.JSON(http.StatusBadRequest,
+			responses.CreateErrorResponse([]string{
+				"Invalid user ID",
+			}))
 		return
 	}
 
-	// Respond
-	c.JSON(http.StatusOK, gin.H{
-		"message": "User deleted successfully",
-	})
+	// Check if the user with the given ID exists
+	var user models.User
+	err = initializer.DB.First(&user, id).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to fetch user",
+			}))
+		return
+	}
+	if &user == nil {
+		c.JSON(http.StatusNotFound,
+			responses.CreateErrorResponse([]string{
+				"User not found",
+			}))
+		return
+	}
+
+	// Delete the user
+	err = initializer.DB.Delete(&models.User{}, id).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to delete user",
+			}))
+		return
+	}
+
+	// Return success response
+	c.JSON(http.StatusOK,
+		responses.CreateSuccessResponse(nil))
 }
