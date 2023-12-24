@@ -28,3 +28,23 @@ func CreateErrorResponse(errors []string) gin.H {
 		},
 	}
 }
+
+func CreateSuccessResponseForMultipleUsers(users []models.User) gin.H {
+	userList := make([]map[string]interface{}, len(users))
+
+	for i, user := range users {
+		userList[i] = map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+		}
+	}
+
+	return gin.H{
+		"status":  "success",
+		"message": "Users fetched successfully",
+		"data": gin.H{
+			"users": userList,
+		},
+	}
+}

@@ -116,16 +116,24 @@ func GetAllUsers(c *gin.Context) {
 	var users []models.User
 	err := initializer.DB.Find(&users).Error
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch users",
-		})
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to fetch users",
+			}))
+		return
+	}
+	// Check if no users were found
+	if len(users) == 0 {
+		c.JSON(http.StatusNotFound,
+			responses.CreateErrorResponse([]string{
+				"No users found",
+			}))
 		return
 	}
 
-	// Respond with the found users
-	c.JSON(http.StatusOK, gin.H{
-		"users": users,
-	})
+	// Return success response
+	c.JSON(http.StatusOK,
+		responses.CreateSuccessResponseForMultipleUsers(users))
 
 }
 
