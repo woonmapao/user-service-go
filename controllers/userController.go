@@ -75,7 +75,7 @@ func GetUserByID(c *gin.Context) {
 	// Get ID from URL param
 	userID := c.Param("id")
 
-	// Convert user ID to integer
+	// Convert user ID to integer (validations)
 	id, err := strconv.Atoi(userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,
@@ -141,20 +141,31 @@ func UpdateUser(c *gin.Context) {
 	// Handle the update of an existing user
 
 	// Get ID from URL param
-	id := c.Param("id")
+	userID := c.Param("id")
+
+	// Convert user ID to integer (validations)
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,
+			responses.CreateErrorResponse([]string{
+				"Invalid user ID",
+			}))
+		return
+	}
 
 	// Get data from request body
-	var body struct {
+	var updateData struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
-	err := c.ShouldBindJSON(&body)
+	err = c.ShouldBindJSON(&updateData)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(http.StatusBadRequest,
+			responses.CreateErrorResponse([]string{
+				"Invalid request format",
+			}))
 		return
 	}
 
@@ -162,23 +173,38 @@ func UpdateUser(c *gin.Context) {
 	var user models.User
 	err = initializer.DB.First(&user, id).Error
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "User not found",
-		})
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to fetch user",
+			}))
+		return
+	}
+	if &user == nil {
+		c.JSON(http.StatusNotFound,
+			responses.CreateErrorResponse([]string{
+				"User not found",
+			}))
 		return
 	}
 
-	// Update user
-	initializer.DB.Model(&user).Updates(models.User{
-		Username: body.Username,
-		Email:    body.Email,
-		Password: body.Password,
-	})
+	// Update user fields
+	user.Username = updateData.Username
+	user.Email = updateData.Email
+	user.Password = updateData.Password
 
-	// Respond with the updated user
-	c.JSON(http.StatusOK, gin.H{
-		"updatedUser": user,
-	})
+	// Save the updated user to the database
+	err = initializer.DB.Save(&user).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to update user",
+			}))
+		return
+	}
+
+	// Return success response
+	c.JSON(http.StatusOK,
+		responses.CreateSuccessResponse(&user))
 
 }
 
