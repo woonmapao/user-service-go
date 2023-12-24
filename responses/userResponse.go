@@ -48,3 +48,14 @@ func CreateSuccessResponseForMultipleUsers(users []models.User) gin.H {
 		},
 	}
 }
+
+// createSuccessResponseForUserOrders formats the success response for user orders
+func CreateSuccessResponseForUserOrders(orders []models.Order) gin.H {
+	return gin.H{
+		"status":  "success",
+		"message": "Orders retrieved successfully",
+		"data": gin.H{
+			"orders": orders,
+		},
+	}
+}

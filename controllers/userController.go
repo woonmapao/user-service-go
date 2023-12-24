@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -95,7 +96,7 @@ func GetUserByID(c *gin.Context) {
 		return
 	}
 	// Check if the user was not found
-	if &user == nil {
+	if user == (models.User{}) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
@@ -179,7 +180,7 @@ func UpdateUser(c *gin.Context) {
 			}))
 		return
 	}
-	if &user == nil {
+	if user == (models.User{}) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
@@ -213,19 +214,75 @@ func GetUserOrders(c *gin.Context) {
 	// Extract user ID from the request parameters
 	userID := c.Param("id")
 
-	// Query the database for orders associated with the user
-	var userOrders []models.Order
-	if err := initializer.DB.Where("user_id = ?", userID).Find(&userOrders).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch user orders",
-		})
+	// Convert user ID to integer (validations)
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest,
+			responses.CreateErrorResponse([]string{
+				"Invalid user ID",
+			}))
 		return
 	}
 
-	// Return a JSON response with the user's orders
-	c.JSON(http.StatusOK, gin.H{
-		"user_orders": userOrders,
-	})
+	// Get the user from the database
+	var user models.User
+	err = initializer.DB.First(&user, id).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to fetch user",
+			}))
+		return
+	}
+	// Check if the user was not found
+	if user == (models.User{}) {
+		c.JSON(http.StatusNotFound,
+			responses.CreateErrorResponse([]string{
+				"User not found",
+			}))
+		return
+	}
+
+	// Fetch orders for the user from order service
+
+	url := "http://will-decide-later/api/orders?userId="
+	url += strconv.Itoa(id)
+
+	// Make HTTP GET request
+	res, err := http.Get(url)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to fetch user orders",
+			}))
+		return
+	}
+
+	if res.StatusCode != http.StatusOK {
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to fetch user orders",
+			}))
+		return
+	}
+
+	// Decode the JSON response into OrderResponse struct
+	var orderResponse models.OrderResponse
+	err = json.NewDecoder(res.Body).Decode(&orderResponse)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to fetch user orders",
+			}))
+		return
+	}
+
+	// Return success response
+	c.JSON(http.StatusOK,
+		responses.CreateSuccessResponseForUserOrders(
+			orderResponse.Data.Orders,
+		))
+
 }
 
 // DeleteUser deletes a user based on their ID
@@ -253,7 +310,7 @@ func DeleteUser(c *gin.Context) {
 			}))
 		return
 	}
-	if &user == nil {
+	if user == (models.User{}) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
@@ -275,3 +332,18 @@ func DeleteUser(c *gin.Context) {
 	c.JSON(http.StatusOK,
 		responses.CreateSuccessResponse(nil))
 }
+
+// Possible plan
+
+// User Authentication (AuthenticateUser):
+
+//     Authenticate users during login.
+//     Verify provided credentials against stored user information.
+
+// User Authorization (AuthorizeUser):
+
+//     Determine whether a user has the necessary permissions to perform certain actions.
+
+// User Search (SearchUsers):
+
+//     Implement a search functionality for users based on criteria like name, email, etc.
