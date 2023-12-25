@@ -21,16 +21,21 @@ func AddUser(c *gin.Context) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-
 	err := c.ShouldBindJSON(&body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(http.StatusBadRequest,
+			responses.CreateErrorResponse([]string{
+				"Invalid request format",
+			}))
 		return
 	}
 
-	if validations.IsUsernameDuplicate(body.Username) {
+	// Start a transaction
+	tx := initializer.DB.Begin()
+
+	// Check for duplicate username
+	if validations.IsUsernameDuplicate(body.Username, tx) {
+		tx.Rollback()
 		c.JSON(http.StatusConflict,
 			responses.CreateErrorResponse([]string{
 				"Username is already taken",
@@ -39,7 +44,8 @@ func AddUser(c *gin.Context) {
 	}
 
 	// Check for duplicate email
-	if validations.IsEmailDuplicate(body.Email) {
+	if validations.IsEmailDuplicate(body.Email, tx) {
+		tx.Rollback()
 		c.JSON(http.StatusConflict,
 			responses.CreateErrorResponse([]string{
 				"Email is already registered",
@@ -53,15 +59,18 @@ func AddUser(c *gin.Context) {
 		Email:    body.Email,
 		Password: body.Password,
 	}
-
-	err = initializer.DB.Create(&user).Error
+	err = tx.Create(&user).Error
 	if err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to create user",
 			}))
 		return
 	}
+
+	// Commit the transaction
+	tx.Commit()
 
 	// Return success response
 	c.JSON(http.StatusOK,
