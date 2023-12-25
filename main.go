@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/woonmapao/user-service-go/initializer"
 )
@@ -13,6 +15,12 @@ func init() {
 func main() {
 
 	r := gin.Default()
-	r.Run()
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	r.Run(":" + port)
 
 }
