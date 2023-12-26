@@ -298,7 +298,6 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to commit transaction",
-				err.Error(), // Include the specific error message
 			}))
 		return
 	}
