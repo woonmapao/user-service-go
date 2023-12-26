@@ -165,8 +165,8 @@ func GetAllUsers(c *gin.Context) {
 
 }
 
+// Handle the update of an existing user
 func UpdateUser(c *gin.Context) {
-	// Handle the update of an existing user
 
 	// Get ID from URL param
 	userID := c.Param("id")
@@ -183,11 +183,10 @@ func UpdateUser(c *gin.Context) {
 
 	// Get data from request body
 	var updateData struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Username string `json:"username" binding:"required"`
+		Email    string `json:"email" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
-
 	err = c.ShouldBindJSON(&updateData)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,
@@ -197,10 +196,23 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
+	// Check for empty values
+	if updateData.Username == "" || updateData.Email == "" || updateData.Password == "" {
+		c.JSON(http.StatusBadRequest,
+			responses.CreateErrorResponse([]string{
+				"Username, email, and password are required fields",
+			}))
+		return
+	}
+
+	// Start a transaction
+	tx := initializer.DB.Begin()
+
 	// Check if the user with the given ID exists
 	var user models.User
-	err = initializer.DB.First(&user, id).Error
+	err = tx.First(&user, id).Error
 	if err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch user",
@@ -208,9 +220,30 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 	if user == (models.User{}) {
+		tx.Rollback()
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
+			}))
+		return
+	}
+
+	// Check for duplicate username
+	if validations.IsUsernameDuplicate(updateData.Username, tx) {
+		tx.Rollback()
+		c.JSON(http.StatusConflict,
+			responses.CreateErrorResponse([]string{
+				"Username is already taken",
+			}))
+		return
+	}
+
+	// Check for duplicate email
+	if validations.IsEmailDuplicate(updateData.Email, tx) {
+		tx.Rollback()
+		c.JSON(http.StatusConflict,
+			responses.CreateErrorResponse([]string{
+				"Email is already registered",
 			}))
 		return
 	}
@@ -221,11 +254,24 @@ func UpdateUser(c *gin.Context) {
 	user.Password = updateData.Password
 
 	// Save the updated user to the database
-	err = initializer.DB.Save(&user).Error
+	err = tx.Save(&user).Error
 	if err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to update user",
+			}))
+		return
+	}
+
+	// Commit the transaction and check for commit errors
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to commit transaction",
+				err.Error(), // Include the specific error message
 			}))
 		return
 	}
