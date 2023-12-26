@@ -17,9 +17,9 @@ func AddUser(c *gin.Context) {
 
 	// Get data from the request body
 	var body struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Username string `json:"username" binding:"required"`
+		Email    string `json:"email" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 	err := c.ShouldBindJSON(&body)
 	if err != nil {
