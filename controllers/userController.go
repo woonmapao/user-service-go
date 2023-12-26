@@ -224,6 +224,14 @@ func UpdateUser(c *gin.Context) {
 
 	// Start a transaction
 	tx := initializer.DB.Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to begin transaction",
+				tx.Error.Error(),
+			}))
+		return
+	}
 
 	// Check if the user with the given ID exists
 	var user models.User
@@ -401,6 +409,14 @@ func DeleteUser(c *gin.Context) {
 
 	// Start a transaction
 	tx := initializer.DB.Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to begin transaction",
+				tx.Error.Error(),
+			}))
+		return
+	}
 
 	// Check if the user with the given ID exists
 	var user models.User
