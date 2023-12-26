@@ -19,6 +19,20 @@ func CreateSuccessResponse(user *models.User) gin.H {
 	}
 }
 
+func UpdateSuccessResponse(user *models.User) gin.H {
+	return gin.H{
+		"status":  "success",
+		"message": "User updated successfully",
+		"data": gin.H{
+			"user": gin.H{
+				"id":       user.ID,
+				"username": user.Username,
+				"email":    user.Email,
+			},
+		},
+	}
+}
+
 func CreateErrorResponse(errors []string) gin.H {
 	return gin.H{
 		"status":  "error",
