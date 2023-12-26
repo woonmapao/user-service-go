@@ -30,6 +30,15 @@ func AddUser(c *gin.Context) {
 		return
 	}
 
+	// Check for empty values
+	if body.Username == "" || body.Email == "" || body.Password == "" {
+		c.JSON(http.StatusBadRequest,
+			responses.CreateErrorResponse([]string{
+				"Username, email, and password are required fields",
+			}))
+		return
+	}
+
 	// Start a transaction
 	tx := initializer.DB.Begin()
 
@@ -69,8 +78,17 @@ func AddUser(c *gin.Context) {
 		return
 	}
 
-	// Commit the transaction
-	tx.Commit()
+	// Commit the transaction and check for commit errors
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to commit transaction",
+				err.Error(), // Include the specific error message
+			}))
+		return
+	}
 
 	// Return success response
 	c.JSON(http.StatusOK,
