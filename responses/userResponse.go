@@ -19,6 +19,34 @@ func CreateSuccessResponse(user *models.User) gin.H {
 	}
 }
 
+func DeleteSuccessResponse(user *models.User) gin.H {
+	return gin.H{
+		"status":  "success",
+		"message": "User deleted successfully",
+		"data": gin.H{
+			"user": gin.H{
+				"id":       user.ID,
+				"username": user.Username,
+				"email":    user.Email,
+			},
+		},
+	}
+}
+
+func GetSuccessResponse(user *models.User) gin.H {
+	return gin.H{
+		"status":  "success",
+		"message": "User fetched successfully",
+		"data": gin.H{
+			"user": gin.H{
+				"id":       user.ID,
+				"username": user.Username,
+				"email":    user.Email,
+			},
+		},
+	}
+}
+
 func UpdateSuccessResponse(user *models.User) gin.H {
 	return gin.H{
 		"status":  "success",
@@ -43,7 +71,7 @@ func CreateErrorResponse(errors []string) gin.H {
 	}
 }
 
-func CreateSuccessResponseForMultipleUsers(users []models.User) gin.H {
+func GetSuccessResponseForMultipleUsers(users []models.User) gin.H {
 	userList := make([]map[string]interface{}, len(users))
 
 	for i, user := range users {

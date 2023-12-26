@@ -30,7 +30,4 @@ func main() {
 
 // list problem
 // wrong response msg i.e. msg: success add user when UpdateUser()
-// null field can use AddUser(), UpdateUser()
-// null field bypass duplicate name, email check
-// DeleteUser() has no response
 // GetUserOrders() not test, wait for order-services to finished

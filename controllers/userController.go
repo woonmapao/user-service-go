@@ -141,7 +141,7 @@ func GetUserByID(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.CreateSuccessResponse(&user))
+		responses.GetSuccessResponse(&user))
 
 }
 
@@ -171,7 +171,7 @@ func GetAllUsers(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.CreateSuccessResponseForMultipleUsers(users))
+		responses.GetSuccessResponseForMultipleUsers(users))
 
 }
 
@@ -398,10 +398,14 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
+	// Start a transaction
+	tx := initializer.DB.Begin()
+
 	// Check if the user with the given ID exists
 	var user models.User
-	err = initializer.DB.First(&user, id).Error
+	err = tx.First(&user, id).Error
 	if err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch user",
@@ -410,6 +414,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 	if user == (models.User{}) {
+		tx.Rollback()
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
@@ -419,8 +424,9 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	// Delete the user
-	err = initializer.DB.Delete(&models.User{}, id).Error
+	err = tx.Delete(&models.User{}, id).Error
 	if err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to delete user",
@@ -429,9 +435,22 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
+	// Commit the transaction and check for commit errors
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to commit transaction",
+				err.Error(), // Include the specific error message
+			}))
+		return
+	}
+
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.CreateSuccessResponse(nil))
+		responses.DeleteSuccessResponse(&user),
+	)
 }
 
 // Possible plan
