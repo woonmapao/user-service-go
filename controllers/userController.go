@@ -95,7 +95,7 @@ func AddUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to commit transaction",
-				err.Error(), // Include the specific error message
+				err.Error(),
 			}))
 		return
 	}
@@ -145,7 +145,8 @@ func GetUserByID(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.GetSuccessResponse(&user))
+		responses.GetSuccessResponse(&user),
+	)
 
 }
 
@@ -174,7 +175,8 @@ func GetAllUsers(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.GetSuccessResponseForMultipleUsers(users))
+		responses.GetSuccessResponseForMultipleUsers(users),
+	)
 
 }
 
@@ -295,7 +297,8 @@ func UpdateUser(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.UpdateSuccessResponse(&user))
+		responses.UpdateSuccessResponse(&user),
+	)
 
 }
 
@@ -375,7 +378,8 @@ func GetUserOrders(c *gin.Context) {
 	c.JSON(http.StatusOK,
 		responses.CreateSuccessResponseForUserOrders(
 			orderResponse.Data.Orders,
-		))
+		),
+	)
 
 }
 
