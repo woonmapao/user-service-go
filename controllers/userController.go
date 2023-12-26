@@ -26,6 +26,7 @@ func AddUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest,
 			responses.CreateErrorResponse([]string{
 				"Invalid request format",
+				err.Error(),
 			}))
 		return
 	}
@@ -35,6 +36,7 @@ func AddUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest,
 			responses.CreateErrorResponse([]string{
 				"Username, email, and password are required fields",
+				err.Error(),
 			}))
 		return
 	}
@@ -48,6 +50,7 @@ func AddUser(c *gin.Context) {
 		c.JSON(http.StatusConflict,
 			responses.CreateErrorResponse([]string{
 				"Username is already taken",
+				err.Error(),
 			}))
 		return
 	}
@@ -58,6 +61,7 @@ func AddUser(c *gin.Context) {
 		c.JSON(http.StatusConflict,
 			responses.CreateErrorResponse([]string{
 				"Email is already registered",
+				err.Error(),
 			}))
 		return
 	}
@@ -74,6 +78,7 @@ func AddUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to create user",
+				err.Error(),
 			}))
 		return
 	}
@@ -109,6 +114,7 @@ func GetUserByID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest,
 			responses.CreateErrorResponse([]string{
 				"Invalid user ID",
+				err.Error(),
 			}))
 		return
 	}
@@ -119,6 +125,7 @@ func GetUserByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch user",
+				err.Error(),
 			}))
 		return
 	}
@@ -127,6 +134,7 @@ func GetUserByID(c *gin.Context) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
+				err.Error(),
 			}))
 		return
 	}
@@ -147,6 +155,7 @@ func GetAllUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch users",
+				err.Error(),
 			}))
 		return
 	}
@@ -155,6 +164,7 @@ func GetAllUsers(c *gin.Context) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"No users found",
+				err.Error(),
 			}))
 		return
 	}
@@ -301,6 +311,7 @@ func GetUserOrders(c *gin.Context) {
 		c.JSON(http.StatusBadRequest,
 			responses.CreateErrorResponse([]string{
 				"Invalid user ID",
+				err.Error(),
 			}))
 		return
 	}
@@ -312,6 +323,7 @@ func GetUserOrders(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch user",
+				err.Error(),
 			}))
 		return
 	}
@@ -320,6 +332,7 @@ func GetUserOrders(c *gin.Context) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
+				err.Error(),
 			}))
 		return
 	}
@@ -335,6 +348,7 @@ func GetUserOrders(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch user orders",
+				err.Error(),
 			}))
 		return
 	}
@@ -343,6 +357,7 @@ func GetUserOrders(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch user orders",
+				err.Error(),
 			}))
 		return
 	}
@@ -354,6 +369,7 @@ func GetUserOrders(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch user orders",
+				err.Error(),
 			}))
 		return
 	}
@@ -377,6 +393,7 @@ func DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest,
 			responses.CreateErrorResponse([]string{
 				"Invalid user ID",
+				err.Error(),
 			}))
 		return
 	}
@@ -388,6 +405,7 @@ func DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch user",
+				err.Error(),
 			}))
 		return
 	}
@@ -395,6 +413,7 @@ func DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
+				err.Error(),
 			}))
 		return
 	}
@@ -405,6 +424,7 @@ func DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to delete user",
+				err.Error(),
 			}))
 		return
 	}
