@@ -177,6 +177,7 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest,
 			responses.CreateErrorResponse([]string{
 				"Invalid user ID",
+				err.Error(),
 			}))
 		return
 	}
@@ -192,6 +193,7 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest,
 			responses.CreateErrorResponse([]string{
 				"Invalid request format",
+				err.Error(),
 			}))
 		return
 	}
@@ -201,6 +203,7 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest,
 			responses.CreateErrorResponse([]string{
 				"Username, email, and password are required fields",
+				err.Error(),
 			}))
 		return
 	}
@@ -216,6 +219,7 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch user",
+				err.Error(),
 			}))
 		return
 	}
@@ -224,6 +228,7 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
+				err.Error(),
 			}))
 		return
 	}
@@ -234,6 +239,7 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusConflict,
 			responses.CreateErrorResponse([]string{
 				"Username is already taken",
+				err.Error(),
 			}))
 		return
 	}
@@ -244,6 +250,7 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusConflict,
 			responses.CreateErrorResponse([]string{
 				"Email is already registered",
+				err.Error(),
 			}))
 		return
 	}
@@ -260,6 +267,7 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to update user",
+				err.Error(),
 			}))
 		return
 	}
