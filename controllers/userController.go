@@ -36,13 +36,20 @@ func AddUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest,
 			responses.CreateErrorResponse([]string{
 				"Username, email, and password are required fields",
-				err.Error(),
 			}))
 		return
 	}
 
 	// Start a transaction
 	tx := initializer.DB.Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError,
+			responses.CreateErrorResponse([]string{
+				"Failed to begin transaction",
+				tx.Error.Error(),
+			}))
+		return
+	}
 
 	// Check for duplicate username
 	if validations.IsUsernameDuplicate(body.Username, tx) {
@@ -50,7 +57,6 @@ func AddUser(c *gin.Context) {
 		c.JSON(http.StatusConflict,
 			responses.CreateErrorResponse([]string{
 				"Username is already taken",
-				err.Error(),
 			}))
 		return
 	}
@@ -61,7 +67,6 @@ func AddUser(c *gin.Context) {
 		c.JSON(http.StatusConflict,
 			responses.CreateErrorResponse([]string{
 				"Email is already registered",
-				err.Error(),
 			}))
 		return
 	}
@@ -134,7 +139,6 @@ func GetUserByID(c *gin.Context) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
-				err.Error(),
 			}))
 		return
 	}
@@ -164,7 +168,6 @@ func GetAllUsers(c *gin.Context) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"No users found",
-				err.Error(),
 			}))
 		return
 	}
@@ -213,7 +216,6 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest,
 			responses.CreateErrorResponse([]string{
 				"Username, email, and password are required fields",
-				err.Error(),
 			}))
 		return
 	}
@@ -238,7 +240,6 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
-				err.Error(),
 			}))
 		return
 	}
@@ -249,7 +250,6 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusConflict,
 			responses.CreateErrorResponse([]string{
 				"Username is already taken",
-				err.Error(),
 			}))
 		return
 	}
@@ -260,7 +260,6 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusConflict,
 			responses.CreateErrorResponse([]string{
 				"Email is already registered",
-				err.Error(),
 			}))
 		return
 	}
@@ -332,7 +331,6 @@ func GetUserOrders(c *gin.Context) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
-				err.Error(),
 			}))
 		return
 	}
@@ -357,7 +355,6 @@ func GetUserOrders(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError,
 			responses.CreateErrorResponse([]string{
 				"Failed to fetch user orders",
-				err.Error(),
 			}))
 		return
 	}
@@ -418,7 +415,6 @@ func DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound,
 			responses.CreateErrorResponse([]string{
 				"User not found",
-				err.Error(),
 			}))
 		return
 	}
