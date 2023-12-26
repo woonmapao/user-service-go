@@ -232,7 +232,7 @@ func UpdateUser(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.CreateSuccessResponse(&user))
+		responses.UpdateSuccessResponse(&user))
 
 }
 
