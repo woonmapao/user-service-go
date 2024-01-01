@@ -110,19 +110,11 @@ func AddUser(c *gin.Context) {
 // Retrieve a specific user based on their ID
 func GetUserByID(c *gin.Context) {
 
-	// Get ID from URL param
-	userID := c.Param("id")
-
-	// Convert user ID to integer (validations)
-	id, err := strconv.Atoi(userID)
+	id, err := getIdAndValidate(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest,
-			responses.CreateErrorResponse([]string{
-				"Invalid user ID",
-				err.Error(),
-			}))
 		return
 	}
+
 	// Get the user from the database
 	var user models.User
 	err = initializer.DB.First(&user, id).Error
@@ -183,17 +175,8 @@ func GetAllUsers(c *gin.Context) {
 // Handle the update of an existing user
 func UpdateUser(c *gin.Context) {
 
-	// Get ID from URL param
-	userID := c.Param("id")
-
-	// Convert user ID to integer (validations)
-	id, err := strconv.Atoi(userID)
+	id, err := getIdAndValidate(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest,
-			responses.CreateErrorResponse([]string{
-				"Invalid user ID",
-				err.Error(),
-			}))
 		return
 	}
 
@@ -311,17 +294,9 @@ func UpdateUser(c *gin.Context) {
 
 // GetUserOrders fetches all orders associated with a specific user
 func GetUserOrders(c *gin.Context) {
-	// Extract user ID from the request parameters
-	userID := c.Param("id")
 
-	// Convert user ID to integer (validations)
-	id, err := strconv.Atoi(userID)
+	id, err := getIdAndValidate(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest,
-			responses.CreateErrorResponse([]string{
-				"Invalid user ID",
-				err.Error(),
-			}))
 		return
 	}
 
@@ -392,17 +367,9 @@ func GetUserOrders(c *gin.Context) {
 
 // DeleteUser deletes a user based on their ID
 func DeleteUser(c *gin.Context) {
-	// Get the ID off the URL
-	userID := c.Param("id")
 
-	// Convert user ID to integer (validations)
-	id, err := strconv.Atoi(userID)
+	id, err := getIdAndValidate(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest,
-			responses.CreateErrorResponse([]string{
-				"Invalid user ID",
-				err.Error(),
-			}))
 		return
 	}
 
@@ -466,6 +433,21 @@ func DeleteUser(c *gin.Context) {
 	c.JSON(http.StatusOK,
 		responses.DeleteSuccessResponse(&user),
 	)
+}
+
+func getIdAndValidate(c *gin.Context) (id int, err error) {
+
+	id, err = strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest,
+			responses.CreateErrorResponse([]string{
+				"Invalid user ID",
+				err.Error(),
+			}))
+		return 0, err
+	}
+
+	return id, nil
 }
 
 // Possible plan
