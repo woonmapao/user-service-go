@@ -10,6 +10,7 @@ import (
 	"github.com/woonmapao/user-service-go/models"
 	r "github.com/woonmapao/user-service-go/responses"
 	"github.com/woonmapao/user-service-go/validations"
+	"gorm.io/gorm"
 )
 
 func AddUser(c *gin.Context) {
@@ -41,13 +42,8 @@ func AddUser(c *gin.Context) {
 	}
 
 	// Start a transaction
-	tx := initializer.DB.Begin()
-	if tx.Error != nil {
-		c.JSON(http.StatusInternalServerError,
-			r.CreateError([]string{
-				"Failed to begin transaction",
-				tx.Error.Error(),
-			}))
+	tx, err := startTrx(c)
+	if err != nil {
 		return
 	}
 
@@ -89,14 +85,8 @@ func AddUser(c *gin.Context) {
 	}
 
 	// Commit the transaction and check for commit errors
-	err = tx.Commit().Error
+	err = commitTrx(c, tx)
 	if err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError,
-			r.CreateError([]string{
-				"Failed to commit transaction",
-				err.Error(),
-			}))
 		return
 	}
 
@@ -206,13 +196,8 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	// Start a transaction
-	tx := initializer.DB.Begin()
-	if tx.Error != nil {
-		c.JSON(http.StatusInternalServerError,
-			r.CreateError([]string{
-				"Failed to begin transaction",
-				tx.Error.Error(),
-			}))
+	tx, err := startTrx(c)
+	if err != nil {
 		return
 	}
 
@@ -275,13 +260,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	// Commit the transaction and check for commit errors
-	err = tx.Commit().Error
 	if err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError,
-			r.CreateError([]string{
-				"Failed to commit transaction",
-			}))
 		return
 	}
 
@@ -374,13 +353,8 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	// Start a transaction
-	tx := initializer.DB.Begin()
-	if tx.Error != nil {
-		c.JSON(http.StatusInternalServerError,
-			r.CreateError([]string{
-				"Failed to begin transaction",
-				tx.Error.Error(),
-			}))
+	tx, err := startTrx(c)
+	if err != nil {
 		return
 	}
 
@@ -418,14 +392,7 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	// Commit the transaction and check for commit errors
-	err = tx.Commit().Error
 	if err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError,
-			r.CreateError([]string{
-				"Failed to commit transaction",
-				err.Error(), // Include the specific error message
-			}))
 		return
 	}
 
@@ -448,6 +415,33 @@ func getID(c *gin.Context) (id int, err error) {
 	}
 
 	return id, nil
+}
+
+func startTrx(c *gin.Context) (*gorm.DB, error) {
+	tx := initializer.DB.Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError,
+			r.CreateError([]string{
+				"Failed to begin transaction",
+				tx.Error.Error(),
+			}))
+		return nil, tx.Error
+	}
+	return tx, nil
+}
+
+func commitTrx(c *gin.Context, tx *gorm.DB) error {
+	err := tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError,
+			r.CreateError([]string{
+				"Failed to commit transaction",
+				err.Error(),
+			}))
+		return err
+	}
+	return nil
 }
 
 // Possible plan
