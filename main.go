@@ -27,7 +27,3 @@ func main() {
 	r.Run(":" + port)
 
 }
-
-// list problem
-// wrong response msg i.e. msg: success add user when UpdateUser()
-// GetUserOrders() not test, wait for order-services to finished
