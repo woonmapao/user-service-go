@@ -11,24 +11,16 @@ import (
 func IsDupe(username, email string, tx *gorm.DB) (bool, error) {
 
 	// Check username dupe
-	var user models.User
-	err := tx.Where("username = ?", username).First(&user).Error
-	if err != nil {
-		// failed to fetch
+	var a models.User
+	err := tx.Where("username = ?", username).First(&a).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, errors.New("failed to validate")
 	}
-	if user != (models.User{}) {
-		return true, nil // found dupe
-	}
-
 	// Check email dupe
-	err = tx.Where("email = ?", email).First(&user).Error
-	if err != nil {
-		// failed to fetch
+	var b models.User
+	err = tx.Where("email = ?", email).First(&b).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, errors.New("failed to validate")
 	}
-	if user != (models.User{}) {
-		return true, nil // found dupe
-	}
-	return false, nil // no username or email dupe
+	return a.ID != 0 || b.ID != 0, nil // found dupe
 }
