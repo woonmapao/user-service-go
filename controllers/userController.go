@@ -90,6 +90,7 @@ func GetUserByID(c *gin.Context) {
 			r.CreateError([]string{
 				err.Error(),
 			}))
+		return
 	}
 
 	// Get the user from the database
@@ -154,6 +155,7 @@ func UpdateUser(c *gin.Context) {
 			r.CreateError([]string{
 				err.Error(),
 			}))
+		return
 	}
 
 	// Get data from request body
@@ -235,6 +237,10 @@ func GetUserOrders(c *gin.Context) {
 
 	id, err := getID(c)
 	if err != nil {
+		c.JSON(http.StatusBadRequest,
+			r.CreateError([]string{
+				err.Error(),
+			}))
 		return
 	}
 
@@ -308,6 +314,10 @@ func DeleteUser(c *gin.Context) {
 
 	id, err := getID(c)
 	if err != nil {
+		c.JSON(http.StatusBadRequest,
+			r.CreateError([]string{
+				err.Error(),
+			}))
 		return
 	}
 
