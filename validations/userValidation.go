@@ -1,31 +1,34 @@
 package validations
 
 import (
+	"errors"
+
 	"github.com/woonmapao/user-service-go/models"
 	"gorm.io/gorm"
 )
 
-func IsUsernameDuplicate(username string, tx *gorm.DB) bool {
+// Check username and email dupe
+func IsDupe(username, email string, tx *gorm.DB) (bool, error) {
 
+	// Check username dupe
 	var user models.User
 	err := tx.Where("username = ?", username).First(&user).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		// An unexpected error occurred, return true to handle it outside the function
-		return true
-	}
-
-	// If a user with the given username is found, return true (duplicate)
-	return user.ID != 0
-}
-
-func IsEmailDuplicate(email string, tx *gorm.DB) bool {
-
-	var user models.User
-	err := tx.Where("email = ?", email).First(&user).Error
 	if err != nil {
-		return false
+		// failed to fetch
+		return false, errors.New("failed to validate")
+	}
+	if user != (models.User{}) {
+		return true, nil // found dupe
 	}
 
-	// If a user with the given email is found, return true (duplicate)
-	return user.ID != 0
+	// Check email dupe
+	err = tx.Where("email = ?", email).First(&user).Error
+	if err != nil {
+		// failed to fetch
+		return false, errors.New("failed to validate")
+	}
+	if user != (models.User{}) {
+		return true, nil // found dupe
+	}
+	return false, nil // no username or email dupe
 }

@@ -2,41 +2,28 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/woonmapao/user-service-go/initializer"
+	i "github.com/woonmapao/user-service-go/initializer"
 	"github.com/woonmapao/user-service-go/models"
 	r "github.com/woonmapao/user-service-go/responses"
-	"github.com/woonmapao/user-service-go/validations"
+	v "github.com/woonmapao/user-service-go/validations"
 	"gorm.io/gorm"
 )
 
+// Handle the creation of a new user
 func AddUser(c *gin.Context) {
-	// Handle the creation of a new user
 
-	// Get data from the request body
-	var body struct {
-		Username string `json:"username" binding:"required"`
-		Email    string `json:"email" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
-	err := c.ShouldBindJSON(&body)
+	// Get data from request body
+	var body models.UserRequest
+	err := bindAndValidate(c, &body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,
 			r.CreateError([]string{
-				"Invalid request format",
 				err.Error(),
-			}))
-		return
-	}
-
-	// Check for empty values
-	if body.Username == "" || body.Email == "" || body.Password == "" {
-		c.JSON(http.StatusBadRequest,
-			r.CreateError([]string{
-				"Username, email, and password are required fields",
 			}))
 		return
 	}
@@ -47,22 +34,19 @@ func AddUser(c *gin.Context) {
 		return
 	}
 
-	// Check for duplicate username
-	if validations.IsUsernameDuplicate(body.Username, tx) {
-		tx.Rollback()
-		c.JSON(http.StatusConflict,
+	// Check for duplicate username and email
+	dupe, err := v.IsDupe(body.Username, body.Email, tx)
+	if err != nil { // Failed to fetch
+		c.JSON(http.StatusInternalServerError,
 			r.CreateError([]string{
-				"Username is already taken",
+				err.Error(),
 			}))
 		return
 	}
-
-	// Check for duplicate email
-	if validations.IsEmailDuplicate(body.Email, tx) {
-		tx.Rollback()
+	if dupe { // Found duplicate
 		c.JSON(http.StatusConflict,
 			r.CreateError([]string{
-				"Email is already registered",
+				"found duplicate record",
 			}))
 		return
 	}
@@ -78,7 +62,7 @@ func AddUser(c *gin.Context) {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
 			r.CreateError([]string{
-				"Failed to create user",
+				"failed to create user",
 				err.Error(),
 			}))
 		return
@@ -107,7 +91,7 @@ func GetUserByID(c *gin.Context) {
 
 	// Get the user from the database
 	var user models.User
-	err = initializer.DB.First(&user, id).Error
+	err = i.DB.First(&user, id).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
 			r.CreateError([]string{
@@ -137,7 +121,7 @@ func GetAllUsers(c *gin.Context) {
 
 	// Get all users from the database
 	var users []models.User
-	err := initializer.DB.Find(&users).Error
+	err := i.DB.Find(&users).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
 			r.CreateError([]string{
@@ -223,7 +207,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	// Check for duplicate username
-	if validations.IsUsernameDuplicate(updateData.Username, tx) {
+	if v.IsUserDupe(updateData.Username, tx) {
 		tx.Rollback()
 		c.JSON(http.StatusConflict,
 			r.CreateError([]string{
@@ -233,7 +217,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	// Check for duplicate email
-	if validations.IsEmailDuplicate(updateData.Email, tx) {
+	if v.IsEmailDuplicate(updateData.Email, tx) {
 		tx.Rollback()
 		c.JSON(http.StatusConflict,
 			r.CreateError([]string{
@@ -281,7 +265,7 @@ func GetUserOrders(c *gin.Context) {
 
 	// Get the user from the database
 	var user models.User
-	err = initializer.DB.First(&user, id).Error
+	err = i.DB.First(&user, id).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
 			r.CreateError([]string{
@@ -419,13 +403,8 @@ func getID(c *gin.Context) (id int, err error) {
 
 func startTrx(c *gin.Context) (*gorm.DB, error) {
 
-	tx := initializer.DB.Begin()
+	tx := i.DB.Begin()
 	if tx.Error != nil {
-		c.JSON(http.StatusInternalServerError,
-			r.CreateError([]string{
-				"Failed to begin transaction",
-				tx.Error.Error(),
-			}))
 		return nil, tx.Error
 	}
 	return tx, nil
@@ -442,6 +421,24 @@ func commitTrx(c *gin.Context, tx *gorm.DB) error {
 				err.Error(),
 			}))
 		return err
+	}
+	return nil
+}
+
+func bindAndValidate(c *gin.Context, body *models.UserRequest) error {
+
+	err := c.ShouldBindJSON(&body)
+	if err != nil {
+		return errors.New(
+			"invalid request format",
+		)
+	}
+	if body.Username == "" ||
+		body.Email == "" ||
+		body.Password == "" {
+		return errors.New(
+			"username, email and password are required fields",
+		)
 	}
 	return nil
 }
