@@ -5,38 +5,24 @@ import (
 	"github.com/woonmapao/user-service-go/models"
 )
 
-func CreateSuccessResponse(user *models.User) gin.H {
+func CreateSuccess() gin.H {
 	return gin.H{
 		"status":  "success",
-		"message": "User added successfully",
-		"data": gin.H{
-			"user": gin.H{
-				"id":       user.ID,
-				"username": user.Username,
-				"email":    user.Email,
-			},
-		},
+		"message": "user added successfully",
 	}
 }
 
-func DeleteSuccessResponse(user *models.User) gin.H {
+func DeleteSuccess() gin.H {
 	return gin.H{
 		"status":  "success",
-		"message": "User deleted successfully",
-		"data": gin.H{
-			"user": gin.H{
-				"id":       user.ID,
-				"username": user.Username,
-				"email":    user.Email,
-			},
-		},
+		"message": "user deleted successfully",
 	}
 }
 
-func GetSuccessResponse(user *models.User) gin.H {
+func GetSuccess(user *models.User) gin.H {
 	return gin.H{
 		"status":  "success",
-		"message": "User fetched successfully",
+		"message": "user fetched successfully",
 		"data": gin.H{
 			"user": gin.H{
 				"id":       user.ID,
@@ -51,6 +37,16 @@ func UpdateSuccess() gin.H {
 	return gin.H{
 		"status":  "success",
 		"message": "user updated successfully",
+	}
+}
+
+func GetError(errors []string) gin.H {
+	return gin.H{
+		"status":  "error",
+		"message": "failed to fetch",
+		"data": gin.H{
+			"errors": errors,
+		},
 	}
 }
 
@@ -79,17 +75,6 @@ func GetUsersSuccess(userList []models.User) gin.H {
 		"message": "users fetched successfully",
 		"data": gin.H{
 			"users": users,
-		},
-	}
-}
-
-// createSuccessResponseForUserOrders formats the success response for user orders
-func CreateSuccessResponseForUserOrders(orders []models.Order) gin.H {
-	return gin.H{
-		"status":  "success",
-		"message": "Orders retrieved successfully",
-		"data": gin.H{
-			"orders": orders,
 		},
 	}
 }
