@@ -86,7 +86,10 @@ func GetUserByID(c *gin.Context) {
 
 	id, err := getID(c)
 	if err != nil {
-		return
+		c.JSON(http.StatusBadRequest,
+			r.CreateError([]string{
+				err.Error(),
+			}))
 	}
 
 	// Get the user from the database
@@ -151,30 +154,19 @@ func UpdateUser(c *gin.Context) {
 
 	id, err := getID(c)
 	if err != nil {
-		return
+		c.JSON(http.StatusBadRequest,
+			r.CreateError([]string{
+				err.Error(),
+			}))
 	}
 
 	// Get data from request body
-	var updateData struct {
-		Username string `json:"username" binding:"required"`
-		Email    string `json:"email" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
-	err = c.ShouldBindJSON(&updateData)
+	var updData models.UserRequest
+	err = bindAndValidate(c, &updData)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,
 			r.CreateError([]string{
-				"Invalid request format",
 				err.Error(),
-			}))
-		return
-	}
-
-	// Check for empty values
-	if updateData.Username == "" || updateData.Email == "" || updateData.Password == "" {
-		c.JSON(http.StatusBadRequest,
-			r.CreateError([]string{
-				"Username, email, and password are required fields",
 			}))
 		return
 	}
@@ -185,51 +177,37 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Check if the user with the given ID exists
-	var user models.User
-	err = tx.First(&user, id).Error
+	// Find the updating user
+	user, err := getUser(id, tx)
 	if err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusInternalServerError,
+		c.JSON(http.StatusNotFound,
 			r.CreateError([]string{
-				"Failed to fetch user",
 				err.Error(),
 			}))
 		return
 	}
-	if user == (models.User{}) {
-		tx.Rollback()
-		c.JSON(http.StatusNotFound,
+
+	// Check for duplicate username and email
+	dupe, err := v.IsDupe(updData.Username, updData.Email, tx)
+	if err != nil { // Failed to fetch
+		c.JSON(http.StatusInternalServerError,
 			r.CreateError([]string{
-				"User not found",
+				err.Error(),
 			}))
 		return
 	}
-
-	// Check for duplicate username
-	if v.IsUserDupe(updateData.Username, tx) {
-		tx.Rollback()
+	if dupe { // Found duplicate
 		c.JSON(http.StatusConflict,
 			r.CreateError([]string{
-				"Username is already taken",
-			}))
-		return
-	}
-
-	// Check for duplicate email
-	if v.IsEmailDuplicate(updateData.Email, tx) {
-		tx.Rollback()
-		c.JSON(http.StatusConflict,
-			r.CreateError([]string{
-				"Email is already registered",
+				"found duplicate record",
 			}))
 		return
 	}
 
 	// Update user fields
-	user.Username = updateData.Username
-	user.Email = updateData.Email
-	user.Password = updateData.Password
+	user.Username = updData.Username
+	user.Email = updData.Email
+	user.Password = updData.Password
 
 	// Save the updated user to the database
 	err = tx.Save(&user).Error
@@ -237,20 +215,21 @@ func UpdateUser(c *gin.Context) {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
 			r.CreateError([]string{
-				"Failed to update user",
+				"failed to update user",
 				err.Error(),
 			}))
 		return
 	}
 
 	// Commit the transaction and check for commit errors
+	err = commitTrx(c, tx)
 	if err != nil {
 		return
 	}
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		r.UpdateSuccessResponse(&user),
+		r.UpdateSuccess(),
 	)
 
 }
@@ -386,18 +365,12 @@ func DeleteUser(c *gin.Context) {
 	)
 }
 
-func getID(c *gin.Context) (id int, err error) {
+func getID(c *gin.Context) (int, error) {
 
-	id, err = strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest,
-			r.CreateError([]string{
-				"Invalid user ID",
-				err.Error(),
-			}))
-		return 0, err
+		return 0, errors.New("invalid user id")
 	}
-
 	return id, nil
 }
 
@@ -441,6 +414,19 @@ func bindAndValidate(c *gin.Context, body *models.UserRequest) error {
 		)
 	}
 	return nil
+}
+
+func getUser(id int, tx *gorm.DB) (*models.User, error) {
+
+	var user models.User
+	err := tx.First(&user, id).Error
+	if err == gorm.ErrRecordNotFound {
+		return &user, errors.New("user not found")
+	}
+	if err != nil {
+		return &user, errors.New("something went wrong")
+	}
+	return &user, nil
 }
 
 // Possible plan
