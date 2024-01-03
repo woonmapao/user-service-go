@@ -61,7 +61,7 @@ func UpdateSuccessResponse(user *models.User) gin.H {
 	}
 }
 
-func CreateErrorResponse(errors []string) gin.H {
+func CreateError(errors []string) gin.H {
 	return gin.H{
 		"status":  "error",
 		"message": "Validation failed",

@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/woonmapao/user-service-go/initializer"
 	"github.com/woonmapao/user-service-go/models"
-	"github.com/woonmapao/user-service-go/responses"
+	r "github.com/woonmapao/user-service-go/responses"
 	"github.com/woonmapao/user-service-go/validations"
 )
 
@@ -24,7 +24,7 @@ func AddUser(c *gin.Context) {
 	err := c.ShouldBindJSON(&body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Invalid request format",
 				err.Error(),
 			}))
@@ -34,7 +34,7 @@ func AddUser(c *gin.Context) {
 	// Check for empty values
 	if body.Username == "" || body.Email == "" || body.Password == "" {
 		c.JSON(http.StatusBadRequest,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Username, email, and password are required fields",
 			}))
 		return
@@ -44,7 +44,7 @@ func AddUser(c *gin.Context) {
 	tx := initializer.DB.Begin()
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to begin transaction",
 				tx.Error.Error(),
 			}))
@@ -55,7 +55,7 @@ func AddUser(c *gin.Context) {
 	if validations.IsUsernameDuplicate(body.Username, tx) {
 		tx.Rollback()
 		c.JSON(http.StatusConflict,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Username is already taken",
 			}))
 		return
@@ -65,7 +65,7 @@ func AddUser(c *gin.Context) {
 	if validations.IsEmailDuplicate(body.Email, tx) {
 		tx.Rollback()
 		c.JSON(http.StatusConflict,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Email is already registered",
 			}))
 		return
@@ -81,7 +81,7 @@ func AddUser(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to create user",
 				err.Error(),
 			}))
@@ -93,7 +93,7 @@ func AddUser(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to commit transaction",
 				err.Error(),
 			}))
@@ -102,7 +102,7 @@ func AddUser(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.CreateSuccessResponse(&user),
+		r.CreateSuccessResponse(&user),
 	)
 
 }
@@ -110,7 +110,7 @@ func AddUser(c *gin.Context) {
 // Retrieve a specific user based on their ID
 func GetUserByID(c *gin.Context) {
 
-	id, err := getIdAndValidate(c)
+	id, err := getID(c)
 	if err != nil {
 		return
 	}
@@ -120,7 +120,7 @@ func GetUserByID(c *gin.Context) {
 	err = initializer.DB.First(&user, id).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to fetch user",
 				err.Error(),
 			}))
@@ -129,7 +129,7 @@ func GetUserByID(c *gin.Context) {
 	// Check if the user was not found
 	if user == (models.User{}) {
 		c.JSON(http.StatusNotFound,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"User not found",
 			}))
 		return
@@ -137,7 +137,7 @@ func GetUserByID(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.GetSuccessResponse(&user),
+		r.GetSuccessResponse(&user),
 	)
 
 }
@@ -150,7 +150,7 @@ func GetAllUsers(c *gin.Context) {
 	err := initializer.DB.Find(&users).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to fetch users",
 				err.Error(),
 			}))
@@ -159,7 +159,7 @@ func GetAllUsers(c *gin.Context) {
 	// Check if no users were found
 	if len(users) == 0 {
 		c.JSON(http.StatusNotFound,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"No users found",
 			}))
 		return
@@ -167,7 +167,7 @@ func GetAllUsers(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.GetSuccessResponseForMultipleUsers(users),
+		r.GetSuccessResponseForMultipleUsers(users),
 	)
 
 }
@@ -175,7 +175,7 @@ func GetAllUsers(c *gin.Context) {
 // Handle the update of an existing user
 func UpdateUser(c *gin.Context) {
 
-	id, err := getIdAndValidate(c)
+	id, err := getID(c)
 	if err != nil {
 		return
 	}
@@ -189,7 +189,7 @@ func UpdateUser(c *gin.Context) {
 	err = c.ShouldBindJSON(&updateData)
 	if err != nil {
 		c.JSON(http.StatusBadRequest,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Invalid request format",
 				err.Error(),
 			}))
@@ -199,7 +199,7 @@ func UpdateUser(c *gin.Context) {
 	// Check for empty values
 	if updateData.Username == "" || updateData.Email == "" || updateData.Password == "" {
 		c.JSON(http.StatusBadRequest,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Username, email, and password are required fields",
 			}))
 		return
@@ -209,7 +209,7 @@ func UpdateUser(c *gin.Context) {
 	tx := initializer.DB.Begin()
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to begin transaction",
 				tx.Error.Error(),
 			}))
@@ -222,7 +222,7 @@ func UpdateUser(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to fetch user",
 				err.Error(),
 			}))
@@ -231,7 +231,7 @@ func UpdateUser(c *gin.Context) {
 	if user == (models.User{}) {
 		tx.Rollback()
 		c.JSON(http.StatusNotFound,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"User not found",
 			}))
 		return
@@ -241,7 +241,7 @@ func UpdateUser(c *gin.Context) {
 	if validations.IsUsernameDuplicate(updateData.Username, tx) {
 		tx.Rollback()
 		c.JSON(http.StatusConflict,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Username is already taken",
 			}))
 		return
@@ -251,7 +251,7 @@ func UpdateUser(c *gin.Context) {
 	if validations.IsEmailDuplicate(updateData.Email, tx) {
 		tx.Rollback()
 		c.JSON(http.StatusConflict,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Email is already registered",
 			}))
 		return
@@ -267,7 +267,7 @@ func UpdateUser(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to update user",
 				err.Error(),
 			}))
@@ -279,7 +279,7 @@ func UpdateUser(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to commit transaction",
 			}))
 		return
@@ -287,7 +287,7 @@ func UpdateUser(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.UpdateSuccessResponse(&user),
+		r.UpdateSuccessResponse(&user),
 	)
 
 }
@@ -295,7 +295,7 @@ func UpdateUser(c *gin.Context) {
 // GetUserOrders fetches all orders associated with a specific user
 func GetUserOrders(c *gin.Context) {
 
-	id, err := getIdAndValidate(c)
+	id, err := getID(c)
 	if err != nil {
 		return
 	}
@@ -305,7 +305,7 @@ func GetUserOrders(c *gin.Context) {
 	err = initializer.DB.First(&user, id).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to fetch user",
 				err.Error(),
 			}))
@@ -314,7 +314,7 @@ func GetUserOrders(c *gin.Context) {
 	// Check if the user was not found
 	if user == (models.User{}) {
 		c.JSON(http.StatusNotFound,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"User not found",
 			}))
 		return
@@ -329,7 +329,7 @@ func GetUserOrders(c *gin.Context) {
 	res, err := http.Get(url)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to fetch user orders",
 				err.Error(),
 			}))
@@ -338,7 +338,7 @@ func GetUserOrders(c *gin.Context) {
 
 	if res.StatusCode != http.StatusOK {
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to fetch user orders",
 			}))
 		return
@@ -349,7 +349,7 @@ func GetUserOrders(c *gin.Context) {
 	err = json.NewDecoder(res.Body).Decode(&orderResponse)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to fetch user orders",
 				err.Error(),
 			}))
@@ -358,7 +358,7 @@ func GetUserOrders(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.CreateSuccessResponseForUserOrders(
+		r.CreateSuccessResponseForUserOrders(
 			orderResponse.Data.Orders,
 		),
 	)
@@ -368,7 +368,7 @@ func GetUserOrders(c *gin.Context) {
 // DeleteUser deletes a user based on their ID
 func DeleteUser(c *gin.Context) {
 
-	id, err := getIdAndValidate(c)
+	id, err := getID(c)
 	if err != nil {
 		return
 	}
@@ -377,7 +377,7 @@ func DeleteUser(c *gin.Context) {
 	tx := initializer.DB.Begin()
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to begin transaction",
 				tx.Error.Error(),
 			}))
@@ -390,7 +390,7 @@ func DeleteUser(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to fetch user",
 				err.Error(),
 			}))
@@ -399,7 +399,7 @@ func DeleteUser(c *gin.Context) {
 	if user == (models.User{}) {
 		tx.Rollback()
 		c.JSON(http.StatusNotFound,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"User not found",
 			}))
 		return
@@ -410,7 +410,7 @@ func DeleteUser(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to delete user",
 				err.Error(),
 			}))
@@ -422,7 +422,7 @@ func DeleteUser(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Failed to commit transaction",
 				err.Error(), // Include the specific error message
 			}))
@@ -431,16 +431,16 @@ func DeleteUser(c *gin.Context) {
 
 	// Return success response
 	c.JSON(http.StatusOK,
-		responses.DeleteSuccessResponse(&user),
+		r.DeleteSuccessResponse(&user),
 	)
 }
 
-func getIdAndValidate(c *gin.Context) (id int, err error) {
+func getID(c *gin.Context) (id int, err error) {
 
 	id, err = strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest,
-			responses.CreateErrorResponse([]string{
+			r.CreateError([]string{
 				"Invalid user ID",
 				err.Error(),
 			}))
