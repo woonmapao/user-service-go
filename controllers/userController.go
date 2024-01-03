@@ -418,6 +418,7 @@ func getID(c *gin.Context) (id int, err error) {
 }
 
 func startTrx(c *gin.Context) (*gorm.DB, error) {
+
 	tx := initializer.DB.Begin()
 	if tx.Error != nil {
 		c.JSON(http.StatusInternalServerError,
@@ -431,6 +432,7 @@ func startTrx(c *gin.Context) (*gorm.DB, error) {
 }
 
 func commitTrx(c *gin.Context, tx *gorm.DB) error {
+
 	err := tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
