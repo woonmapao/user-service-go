@@ -122,29 +122,25 @@ func GetUserByID(c *gin.Context) {
 // Fetch a list of all users from the database
 func GetAllUsers(c *gin.Context) {
 
-	// Get all users from the database
 	var users []models.User
 	err := i.DB.Find(&users).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
 			r.CreateError([]string{
-				"Failed to fetch users",
-				err.Error(),
+				"failed to fetch users",
 			}))
 		return
 	}
-	// Check if no users were found
 	if len(users) == 0 {
 		c.JSON(http.StatusNotFound,
 			r.CreateError([]string{
-				"No users found",
+				"no users found",
 			}))
 		return
 	}
 
-	// Return success response
 	c.JSON(http.StatusOK,
-		r.GetSuccessResponseForMultipleUsers(users),
+		r.GetUsersSuccess(users),
 	)
 
 }

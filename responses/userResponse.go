@@ -64,22 +64,21 @@ func CreateError(errors []string) gin.H {
 	}
 }
 
-func GetSuccessResponseForMultipleUsers(users []models.User) gin.H {
-	userList := make([]map[string]interface{}, len(users))
+func GetUsersSuccess(userList []models.User) gin.H {
 
-	for i, user := range users {
-		userList[i] = map[string]interface{}{
+	users := make([]gin.H, len(userList))
+	for i, user := range userList {
+		users[i] = map[string]interface{}{
 			"id":       user.ID,
 			"username": user.Username,
 			"email":    user.Email,
 		}
 	}
-
 	return gin.H{
 		"status":  "success",
-		"message": "Users fetched successfully",
+		"message": "users fetched successfully",
 		"data": gin.H{
-			"users": userList,
+			"users": users,
 		},
 	}
 }
