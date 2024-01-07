@@ -141,7 +141,7 @@ func UpdateUserHandler(c *gin.Context) {
 	}
 
 	// Find the updating user (validation)
-	_, err = ctrl.GetUser(id, tx)
+	exist, err := ctrl.GetUser(id, tx)
 	if err != nil {
 		c.JSON(http.StatusNotFound,
 			r.CreateError([]string{
@@ -167,7 +167,7 @@ func UpdateUserHandler(c *gin.Context) {
 		return
 	}
 
-	err = ctrl.UpdateUser(&updData, tx)
+	err = ctrl.UpdateUser(&updData, exist, tx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
 			r.CreateError([]string{

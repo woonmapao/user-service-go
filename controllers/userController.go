@@ -53,14 +53,13 @@ func GetUsers(db *gorm.DB) (*[]m.User, error) {
 	return &users, nil
 }
 
-func UpdateUser(user *m.UserRequest, tx *gorm.DB) error {
+func UpdateUser(update *m.UserRequest, exist *m.User, tx *gorm.DB) error {
 
-	updating := m.User{
-		Username: user.Username,
-		Email:    user.Email,
-		Password: user.Password,
-	}
-	err := tx.Save(&updating).Error
+	exist.Username = update.Username
+	exist.Email = update.Email
+	exist.Password = update.Password
+
+	err := tx.Save(&exist).Error
 	if err != nil {
 		tx.Rollback()
 		return errors.New("failed to update user")
