@@ -34,7 +34,7 @@ func GetUser(id int, db *gorm.DB) (*m.User, error) {
 	if err == gorm.ErrRecordNotFound {
 		return &user, errors.New("user not found")
 	}
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return &user, errors.New("something went wrong")
 	}
 	return &user, nil
